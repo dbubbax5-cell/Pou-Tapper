@@ -1,6 +1,9 @@
-declare module "*.svg?react" {
-  import React = require("react");
-  export const ReactComponent: React.FC<React.SVGProps<SVGSVGElement>>;
-  const src: string;
-  export default src;
-}
+// unleash your creativity and write your code here.
+
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx"
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(
+  <App />
+);
