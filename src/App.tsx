@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import pouImage from './path_to_pou_image.png'; // replace with actual path
 
-const GameUI = () => {
+export default function App() {
     const [score, setScore] = useState(0);
-
-    const handleTap = () => {
-        setScore(score + 1);
-    };
-
     return (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div style={{ textAlign: "center", marginTop: 50 }}>
             <h1>Pou Tapper</h1>
-            <img src={pouImage} alt="Pou Character" style={{ width: '200px', cursor: 'pointer' }} onClick={handleTap} />
-            <p>Score: {score}</p>
-            <p>Tap the Pou to increase your score!</p>
+            <img 
+                src="./pou%20pou.jpg" 
+                alt="Pou" 
+                style={{ width: 200, cursor: "pointer", display: "block", margin: "0 auto 20px auto" }} 
+                onClick={() => setScore(score + 1)} 
+            />
+            <p style={{ fontSize: 24 }}>Score: {score}</p>
+            <p>Tap on Pou to increase your score!</p>
         </div>
     );
-};
-
-export default GameUI;
+}
