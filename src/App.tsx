@@ -8,7 +8,7 @@ export default function App() {
       <h1>Pou Tapper</h1>
       <div style={{ marginBottom: "20px" }}>
         <img 
-          src="./pou%20pou.jpg" 
+   src="/pou.jpg"
           alt="Pou" 
           style={{ width: "200px", cursor: "pointer", borderRadius: "20px" }}
           onClick={() => setScore(score + 1)}
