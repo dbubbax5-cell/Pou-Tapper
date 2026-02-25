@@ -1,66 +1,21 @@
 import React, { useState } from 'react';
 
 export default function App() {
-    const [score, setScore] = useState(0);
-    return (
-        <div style={{ textAlign: "center", marginTop: 50 }}>
-            <h1>Pou Tapper</h1>
-            <img 
-                src="./pou%20pou.jpg" 
-                alt="Pou" 
-                style={{ width: 200, cursor: "pointer", display: "block", margin: "0 auto 20px auto" }} 
-                onClick={() => setScore(score + 1)} 
-            />
-            <p style={{ fontSize: 24 }}>Score: {score}</p>
-            <p>Tap on Pou to increase your score!</p>
-        </div>
-    );
-}
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { GameScreen } from './components/game/GameScreen';
+  const [score, setScore] = useState(0);
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean, error: Error | null }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-4 text-red-500 bg-red-50 h-screen flex flex-col items-center justify-center">
-          <h1 className="text-xl font-bold mb-2">Something went wrong.</h1>
-          <pre className="text-sm bg-gray-100 p-2 rounded">{this.state.error?.message}</pre>
-          <button 
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
-            onClick={() => window.location.reload()}
-          >
-            Reload Game
-          </button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <div className="w-full h-full max-w-full max-h-full">
-        <GameScreen />
+    <div style={{ textAlign: "center", marginTop: "50px", color: "white", fontFamily: "sans-serif" }}>
+      <h1>Pou Tapper</h1>
+      <div style={{ marginBottom: "20px" }}>
+        <img 
+          src="./pou%20pou.jpg" 
+          alt="Pou" 
+          style={{ width: "200px", cursor: "pointer", borderRadius: "20px" }}
+          onClick={() => setScore(score + 1)}
+        />
       </div>
-    </ErrorBoundary>
+      <p style={{ fontSize: "32px", fontWeight: "bold" }}>Score: {score}</p>
+      <p>Tap on Pou to increase your score!</p>
+    </div>
   );
-};
-
-export default App;
+}
