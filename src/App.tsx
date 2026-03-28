@@ -135,5 +135,5 @@ export const POU_COLORS: PouColor[] = [
   // Secret (The Chip Pou)
   { id: 'secret_chip', name: 'Chip Pou', rarity: 'secret', colorCode: '#006400', specialEffect: 'chip' },
 ];
-)
+)}
 export default App;
