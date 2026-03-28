@@ -3,6 +3,7 @@ import { GameScreen } from './PouCharacter'; // Or wherever your main game loop 
 import StatsUI from './StatsUI';
 import LeaderboardUI from './LeaderboardUI';
 import AchievementsUI from './AchievementsUI';
+export const app = ()>(
 export type Achievement = {
   id: string;
   name: string;
@@ -134,4 +135,5 @@ export const POU_COLORS: PouColor[] = [
   // Secret (The Chip Pou)
   { id: 'secret_chip', name: 'Chip Pou', rarity: 'secret', colorCode: '#006400', specialEffect: 'chip' },
 ];
+)
 export default App;
