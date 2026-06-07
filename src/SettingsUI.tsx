@@ -1,334 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useGame } from '../../hooks/useGame';
-import { usePlayerStats } from '../../hooks/usePlayTime';
-import { PouCharacter } from './PouCharacter';
-import { CollectionUI } from './CollectionUI';
-import { LeaderboardUI } from './LeaderboardUI';
-import { StatsUI } from './StatsUI';
-import { AchievementsUI } from './AchievementsUI';
-import { SettingsUI } from './SettingsUI';
-import { playPopSound, playUnlockSound } from '../../lib/audio';
-import { getRarityColor, getRarityBgColor } from '../../lib/game-logic';
-import { Trophy, BarChart3, PieChart, Settings, Medal } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { ACHIEVEMENTS, POU_COLORS, RARITY_SCORES } from '../../types/game';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Volume2, VolumeX, Trash2, User, Star } from 'lucide-react';
 
-export const GameScreen: React.FC = () => {
-  const { currentPou, collection, loading, handleTap, notification, isRespawning, userId } = useGame();
-  const { playTime, totalTaps, achievements, leaderboard, incrementTaps, unlockAchievement, checkBestPou } = usePlayerStats(userId);
-  
-  const [showCollection, setShowCollection] = useState(false);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [showAchievements, setShowAchievements] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  
-  // Achievement Notification
-  const [achievementNotif, setAchievementNotif] = useState<string | null>(null);
+interface SettingsUIProps {
+  onClose: () => void;
+  onReset: () => void;
+}
 
-  // Check Achievements
-  useEffect(() => {
-    // Sync best pou from collection if found better
-    let bestScore = 0;
-    let bestId = '';
-    
-    collection.forEach(id => {
-      const pou = POU_COLORS.find(p => p.id === id);
-      if (pou) {
-        const score = RARITY_SCORES[pou.rarity] || 0;
-        if (score > bestScore) {
-          bestScore = score;
-          bestId = id;
-        }
-      }
-    });
+export const SettingsUI: React.FC<SettingsUIProps> = ({ onClose, onReset }) => {
+  const [soundOn, setSoundOn] = useState(true);
+  const [showCreator, setShowCreator] = useState(false);
 
-    if (bestScore > 0 && bestId) {
-      checkBestPou(bestId);
-    }
-
-    // Helper to check conditions
-    const checkAchievements = () => {
-      const stats = {
-        collectionSize: collection.size,
-        totalTaps: totalTaps,
-        hasLegendary: Array.from(collection).some(id => POU_COLORS.find(p => p.id === id)?.rarity === 'legendary'),
-        hasMythic: Array.from(collection).some(id => POU_COLORS.find(p => p.id === id)?.rarity === 'mythic')
-      };
-
-      ACHIEVEMENTS.forEach(ach => {
-        if (!achievements.has(ach.id) && ach.condition(stats)) {
-          unlockAchievement(ach.id);
-          setAchievementNotif(ach.name);
-          playUnlockSound();
-          setTimeout(() => setAchievementNotif(null), 3000);
-        }
-      });
-    };
-
-    checkAchievements();
-  }, [collection, totalTaps, achievements, unlockAchievement, checkBestPou]);
-
-  // Play sound on notification if it's a new unlock
-  useEffect(() => {
-    if (notification?.type === 'new') {
-      playUnlockSound();
-    }
-  }, [notification]);
-
-  const onPouTap = () => {
-    // Check if the current pou (before respawn) is a new best
-    checkBestPou(currentPou.id);
-    
-    playPopSound();
-    handleTap();
-    incrementTaps();
+  const toggleSound = () => {
+    setSoundOn(!soundOn);
   };
 
-  const formatTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+  const handleRate = () => {
+    window.open('https://github.com/dbubbax5-cell/Pou-Tapper', '_blank');
+    alert('Thank you for rating!');
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset ALL progress? This cannot be undone.')) {
+      localStorage.clear();
+      window.location.reload();
+      onReset();
+    }
+  };
+
+  const handleJoinDiscord = () => {
+    window.open('https://discord.gg/h4mZAcvwaw', '_blank');
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-between p-4 font-sans select-none overflow-hidden relative">
-      
-      {/* Header */}
-      <header className="w-full max-w-md flex justify-between items-center z-10 pt-4 px-2">
-        <div className="flex flex-col">
-          <div className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-             Time: <span className="font-mono text-gray-800 dark:text-gray-200">{formatTime(playTime)}</span>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 20 }}
+        animate={{ y: 0 }}
+        className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-xl border dark:border-gray-800 relative overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-800">
+          <h2 className="text-xl font-bold dark:text-white">Settings</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X className="w-5 h-5 dark:text-white" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+            <div className="flex items-center gap-3">
+              {soundOn ? <Volume2 className="w-5 h-5 text-blue-500" /> : <VolumeX className="w-5 h-5 text-gray-500" />}
+              <span className="font-medium dark:text-white">Sound Effects</span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={soundOn} onChange={toggleSound} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
           </div>
-          <div className="text-xs text-gray-400 font-mono mt-1 flex items-center gap-1">
-             <span className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-[10px] border border-gray-200 dark:border-gray-700">
-               {achievements.size}/{ACHIEVEMENTS.length}
-             </span>
-             Achievements
-          </div>
+
+          <button 
+            onClick={() => setShowCreator(true)}
+            className="w-full p-3 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-xl flex items-center gap-3 transition-colors"
+          >
+            <User className="w-5 h-5" />
+            <span className="font-medium">THE POU KINGS</span>
+          </button>
+
+          <button 
+            onClick={handleRate}
+            className="w-full p-3 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 rounded-xl flex items-center gap-3 transition-colors"
+          >
+            <Star className="w-5 h-5" />
+            <span className="font-medium">Rate Game</span>
+          </button>
+
+          <div className="border-t dark:border-gray-800 my-4"></div>
+
+          <button 
+            onClick={handleReset}
+            className="w-full p-3 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Reset All Progress
+          </button>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            Version 1.3.0 • Made with ❤️
+          </p>
         </div>
 
-        <div className="flex gap-2">
-           <button
-             onClick={() => setShowSettings(true)}
-             className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 text-gray-500"
-           >
-             <Settings className="w-5 h-5" />
-           </button>
-        </div>
-      </header>
-
-      {/* Main Game Area */}
-      <main className="flex-1 flex flex-col justify-center items-center relative w-full max-w-md">
-        
-        {/* Notification Area */}
-        <div className="absolute top-4 w-full flex flex-col items-center pointer-events-none z-20 gap-2">
-          {/* Collection Unlock Notification */}
-          <AnimatePresence mode="wait">
-            {notification && (
-              <motion.div
-                key={notification.message}
-                initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                className={cn(
-                  "px-6 py-3 rounded-full shadow-lg font-bold text-sm tracking-wide flex items-center gap-2",
-                  notification.type === 'new' 
-                    ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" 
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-                )}
+        <AnimatePresence>
+          {showCreator && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="absolute inset-0 z-10 bg-white dark:bg-gray-900 p-6 flex flex-col items-center justify-center text-center space-y-4"
+            >
+              <div className="w-20 h-20 bg-gradient-to-tr from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-3xl shadow-lg">
+                👑
+              </div>
+              <h3 className="text-2xl font-bold dark:text-white">THE POU KINGS</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm px-4">
+                Join our community and become part of the kingdom!
+              </p>
+              
+              <button
+                onClick={handleJoinDiscord}
+                className="w-full p-4 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl flex items-center justify-center gap-3 transition-colors font-bold shadow-lg transform hover:scale-105"
               >
-                {notification.type === 'new' && <span className="text-lg">✨</span>}
-                {notification.message}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.772-.6083 1.1588a18.2915 18.2915 0 00-5.4882 0 12.646 12.646 0 00-.6173-1.1588.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0657.0657 0 00-.0146.0105C1.328 8.975.007 13.432.131 17.863a.068.068 0 00.0315.0625c3.192.507 6.3047 1.529 9.176 3.022a.07.07 0 00.0765-.0275c.1533-.25.3004-.521.4386-.8022a.066.066 0 00-.0364-.092 12.806 12.806 0 01-1.829-.892.073.073 0 00-.036-.126c.122-.091.244-.177.365-.266a.07.07 0 01.073-.01c3.858 1.77 8.032 1.77 11.868 0a.07.07 0 01.075.01c.121.089.242.174.365.265a.073.073 0 00-.036.126 12.759 12.759 0 01-1.83.892.072.072 0 00-.037.092c.138.283.285.554.438.802a.07.07 0 00.077.028c2.92-1.493 6.035-2.545 9.19-3.022a.071.071 0 00.031-.0625c.145-4.537-.24-8.969-2.063-13.055a.06.06 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-.965-2.157-2.156 0-1.193.955-2.157 2.157-2.157 1.202 0 2.169.964 2.157 2.157 0 1.19-.956 2.156-2.157 2.156zm7.975 0c-1.183 0-2.157-.965-2.157-2.156 0-1.193.955-2.157 2.157-2.157 1.202 0 2.169.964 2.157 2.157 0 1.19-.956 2.156-2.157 2.156Z" />
+                </svg>
+                Join My Discord Server
+              </button>
 
-          {/* Achievement Notification */}
-          <AnimatePresence>
-            {achievementNotif && (
-              <motion.div
-                key={achievementNotif}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                className="bg-gray-900 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-gray-700"
+              <button 
+                onClick={() => setShowCreator(false)}
+                className="mt-6 px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="p-2 bg-yellow-500 rounded-full text-black">
-                  <Trophy className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Achievement Unlocked</p>
-                  <p className="font-bold">{achievementNotif}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Pou Character Container */}
-        <div className="relative w-64 h-64 flex justify-center items-center">
-          <AnimatePresence mode="wait">
-            {!isRespawning && (
-              <motion.div
-                key={currentPou.id}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              >
-                <PouCharacter pou={currentPou} onTap={onPouTap} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {/* Respawn effect (poof) */}
-          <AnimatePresence>
-            {isRespawning && (
-              <motion.div
-                initial={{ scale: 0.5, opacity: 1 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0 flex justify-center items-center pointer-events-none"
-              >
-                 <div className="w-32 h-32 bg-white rounded-full opacity-50 blur-xl" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Current Rarity Info */}
-        <div className="mt-12 text-center pointer-events-none">
-          <AnimatePresence mode="wait">
-             <motion.div
-               key={currentPou.id}
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, y: -10 }}
-               className="flex flex-col items-center gap-2"
-             >
-               <span className={cn(
-                 "text-xs uppercase tracking-widest font-bold px-3 py-1 rounded-full border",
-                 getRarityColor(currentPou.rarity),
-                 getRarityBgColor(currentPou.rarity)
-               )}>
-                 {currentPou.rarity}
-               </span>
-               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                 {currentPou.name}
-               </h2>
-             </motion.div>
-          </AnimatePresence>
-        </div>
-
-      </main>
-
-      {/* Footer Navigation Bar */}
-      <footer className="w-full max-w-md pb-4 pt-4 px-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border dark:border-gray-800 p-2 flex justify-between items-center relative z-20">
-           <button
-             onClick={() => setShowStats(true)}
-             className="flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-1 text-gray-500 active:scale-95"
-           >
-             <PieChart className="w-6 h-6 text-green-500" />
-             <span className="text-[10px] font-medium">Stats</span>
-           </button>
-           
-           <button
-             onClick={() => setShowLeaderboard(true)}
-             className="flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-1 text-gray-500 active:scale-95"
-           >
-             <BarChart3 className="w-6 h-6 text-blue-500" />
-             <span className="text-[10px] font-medium">Rank</span>
-           </button>
-
-           <div className="w-px h-8 bg-gray-100 dark:bg-gray-800 mx-1"></div>
-
-           <button
-             onClick={() => setShowAchievements(true)}
-             className="flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-1 text-gray-500 active:scale-95"
-           >
-             <Medal className="w-6 h-6 text-orange-500" />
-             <span className="text-[10px] font-medium">Awards</span>
-           </button>
-
-           <button
-             onClick={() => setShowCollection(true)}
-             className="flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-1 text-gray-500 active:scale-95"
-           >
-             <div className="relative">
-               <Trophy className="w-6 h-6 text-yellow-500" />
-               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-gray-900">
-                 {collection.size}
-               </span>
-             </div>
-             <span className="text-[10px] font-medium">Pous</span>
-           </button>
-        </div>
-      </footer>
-
-      {/* Modals */}
-      <AnimatePresence>
-        {showCollection && (
-          <CollectionUI 
-            collectedIds={collection} 
-            onClose={() => setShowCollection(false)} 
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showLeaderboard && (
-          <LeaderboardUI
-            leaderboard={leaderboard}
-            currentUserId={userId}
-            onClose={() => setShowLeaderboard(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showStats && (
-          <StatsUI
-            collectedCount={collection.size}
-            totalTaps={totalTaps}
-            onClose={() => setShowStats(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showAchievements && (
-          <AchievementsUI
-            unlockedAchievements={achievements}
-            onClose={() => setShowAchievements(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showSettings && (
-          <SettingsUI
-            onClose={() => setShowSettings(false)}
-            onReset={() => {
-              setShowSettings(false);
-              // Force reload is handled in SettingsUI, but we could reset state here if needed
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-    </div>
+                Close
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 };
