@@ -3,7 +3,11 @@ import { GameScreen } from './PouCharacter'; // Or wherever your main game loop 
 import StatsUI from './StatsUI';
 import LeaderboardUI from './LeaderboardUI';
 import AchievementsUI from './AchievementsUI';
-export const app = ()>
+
+export const app = () => {
+  return <GameScreen />;
+};
+
 export type Achievement = {
   id: string;
   name: string;
@@ -30,7 +34,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'clicker_novice',
     name: 'Tapping Novice',
-    description: 'Tap Pou 100 times',()
+    description: 'Tap Pou 100 times',
     condition: (stats) => stats.totalTaps >= 100,
     icon: '👆'
   },
@@ -135,5 +139,5 @@ export const POU_COLORS: PouColor[] = [
   // Secret (The Chip Pou)
   { id: 'secret_chip', name: 'Chip Pou', rarity: 'secret', colorCode: '#006400', specialEffect: 'chip' },
 ];
-()
+
 export default App;
