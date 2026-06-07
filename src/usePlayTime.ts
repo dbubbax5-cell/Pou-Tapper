@@ -1,67 +1,87 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { X, CheckCircle, Crosshair } from 'lucide-react';
-import { POU_COLORS } from '../../types/game';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from './supabase';
 
-interface StatsUIProps {
-  collectedCount: number;
+interface PlayerStats {
+  playTime: number;
   totalTaps: number;
-  onClose: () => void;
+  achievements: Set<string>;
+  leaderboard: any[];
 }
 
-export const StatsUI: React.FC<StatsUIProps> = ({ collectedCount, totalTaps, onClose }) => {
-  const totalAvailable = POU_COLORS.length;
-  const percentage = Math.round((collectedCount / totalAvailable) * 100);
+export const usePlayTime = (userId: string | null) => {
+  const [stats, setStats] = useState<PlayerStats>({
+    playTime: 0,
+    totalTaps: 0,
+    achievements: new Set(),
+    leaderboard: [],
+  });
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl border dark:border-gray-800 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold dark:text-white">Player Stats</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <X className="w-5 h-5 dark:text-white" />
-          </button>
-        </div>
+  useEffect(() => {
+    if (!userId) return;
 
-        <div className="space-y-4">
-          {/* Completion Stat */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl flex items-center gap-4 shadow-sm">
-            <div className="p-3 bg-green-100 text-green-600 rounded-full">
-              <CheckCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Completion</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold dark:text-white">{percentage}%</p>
-                <p className="text-xs text-gray-400">({collectedCount}/{totalAvailable})</p>
-              </div>
-            </div>
-          </div>
+    const interval = setInterval(() => {
+      setStats(prev => ({
+        ...prev,
+        playTime: prev.playTime + 1,
+      }));
+    }, 1000);
 
-          {/* Taps Stat */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl flex items-center gap-4 shadow-sm">
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
-              <Crosshair className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Lifetime Taps</p>
-              <p className="text-2xl font-bold dark:text-white">{totalTaps}</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+    return () => clearInterval(interval);
+  }, [userId]);
+
+  const incrementTaps = useCallback(() => {
+    setStats(prev => ({
+      ...prev,
+      totalTaps: prev.totalTaps + 1,
+    }));
+  }, []);
+
+  const unlockAchievement = useCallback((id: string) => {
+    setStats(prev => ({
+      ...prev,
+      achievements: new Set([...prev.achievements, id]),
+    }));
+  }, []);
+
+  const checkBestPou = useCallback(async (pouId: string) => {
+    if (!userId) return;
+    try {
+      await supabase.from('leaderboard').upsert(
+        { user_id: userId, best_pou_id: pouId, total_taps: stats.totalTaps },
+        { onConflict: 'user_id' }
+      );
+    } catch (error) {
+      console.error('Failed to update leaderboard:', error);
+    }
+  }, [userId, stats.totalTaps]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const { data } = await supabase
+          .from('leaderboard')
+          .select('*')
+          .order('best_rarity_score', { ascending: false })
+          .limit(10);
+        
+        setStats(prev => ({
+          ...prev,
+          leaderboard: data || [],
+        }));
+      } catch (error) {
+        console.error('Failed to fetch leaderboard:', error);
+      }
+    };
+
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return {
+    ...stats,
+    incrementTaps,
+    unlockAchievement,
+    checkBestPou,
+  };
 };
